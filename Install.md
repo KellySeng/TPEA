@@ -1,7 +1,7 @@
 # Install
 
 Install python module Crypto : 
-`pip install pycryptodomex`
+`pip3 install pynacl`
 
 Install server :
 `opam pin add scrabblos https://gitlab.com/julien.t/projet-p6.git`
