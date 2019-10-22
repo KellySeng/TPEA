@@ -8,8 +8,8 @@ class Acteur:
 
     def __init__(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.pk, self.sk = self.keyGen()
         try:
+            self.pk, self.sk = self.keyGen()
             self.socket.connect(("localhost", 12346))
         except ConnectionRefusedError:
             print("Connection to server failed")
@@ -19,10 +19,10 @@ class Acteur:
         pk = sk.verify_key
         return pk, sk
 
-    def sign(self, sk, data):
-        return sk.sign(data.encode()).signature
+    def sign(self,data):
+        return self.sk.sign(data.encode()).signature
 
-    def verify(self, pk, data, signature):
+    def verify(self,pk,data, signature):
         try:
             pk.verify(data.encode(), signature)
             return True
