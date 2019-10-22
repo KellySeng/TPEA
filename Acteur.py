@@ -8,16 +8,15 @@ class Acteur:
 
     def __init__(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.pk, self.sk = self.keyGen()
         try:
             self.socket.connect(("localhost", 12346))
         except ConnectionRefusedError:
             print("Connection to server failed")
 
-
-    def KeyGen(self, length=1024):
+    def keyGen(self, length=1024):
         sk = nas.SigningKey.generate()
         pk = sk.verify_key
-            
         return pk, sk
 
     def sign(self, sk, data):
