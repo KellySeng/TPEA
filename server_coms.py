@@ -10,10 +10,5 @@ def register(socket, public_key):
 def format_to_sendable(data):
     datastring = json.dumps(data)
     size = len(datastring)
-    size_be_hex = (size).to_bytes(8, byteorder="little").hex() # TODO Envoyer un hex ici pour la taille ??
-    # size_be_bin = bin(size)[2:].zfill(64)
-    # print(size_be_hex+datastring)
-    return (str(size) + datastring).encode()
-
-
-# register(None, "Saluteeeee")
+    size_be_bytes = (size).to_bytes(8, byteorder="big") 
+    return (size_be_bytes.decode() + datastring).encode()
