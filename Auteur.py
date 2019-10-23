@@ -50,5 +50,7 @@ class Auteur(Acteur):
                 data = json.dumps(x)
 
                 return data
-a = Auteur()
+
+
+a = Auteur("localhost",12346)
 a.injectLetter("a",0,"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca","b7b597e0d64accdb6d8271328c75ad301c29829619f4865d31cc0c550046a08f")

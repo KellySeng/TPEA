@@ -8,11 +8,12 @@ import json
 
 class Acteur:
 
-    def __init__(self):
+    def __init__(self,addr,port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.pk, self.sk = self.keyGen()
-            self.socket.connect(("localhost", 12346))
+            self.key_str = self.pk.to_curve25519_public_key()._public_key.hex()
+            self.socket.connect((addr,port))
         except ConnectionRefusedError:
             print("Connection to server failed")
 
@@ -68,6 +69,7 @@ class Acteur:
 # s = a1.sign(sk, msg)
 # print(a1.verify(pk, msg, s))
 
-a = Acteur()
-server_coms.register(a.socket, "b7b597e0d64accdb6d8271328c75ad301c29829619f4865d31cc0c550046a08f")
+a = Acteur("localhost",12346)
+server_coms.register(a.socket, a.key_str)
+print(a.key_str)
 a.listen_server()
