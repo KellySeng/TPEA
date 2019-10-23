@@ -12,7 +12,7 @@ class Acteur:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.pk, self.sk = self.keyGen()
-            self.key_str = self.pk.to_curve25519_public_key()._public_key.hex()
+            self.pk_str = self.pk.to_curve25519_public_key().__bytes__().hex()
             self.socket.connect((addr,port))
         except ConnectionRefusedError:
             print("Connection to server failed")
@@ -70,6 +70,5 @@ class Acteur:
 # print(a1.verify(pk, msg, s))
 
 a = Acteur("localhost",12346)
-server_coms.register(a.socket, a.key_str)
-print(a.key_str)
+server_coms.register(a.socket, a.pk_str)
 a.listen_server()
