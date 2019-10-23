@@ -13,12 +13,12 @@ class Auteur(Acteur):
     def generateLetter(self):
         random.choice(string.ascii_letters).lower()
 
-    def byte_to_binary(n):
+    def byte_to_binary(self, n):
         return ''.join(str((n & (1 << i)) and 1) for i in reversed(range(8)))
     
     def injectLetter(self,letter,period,hash_pred,author):
 
-        if(len(letter) ==1 ):
+        if(len(letter) == 1 ):
                 x = {
                     "letter" : letter,
                     "period" : period, #taille du message 8 bytes qui encodent la taille en binaire

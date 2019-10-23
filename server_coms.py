@@ -2,9 +2,46 @@ import json
 
 def register(socket, public_key):
     data = { "register" : public_key}
-    print(format_to_sendable(data))
+    # print(format_to_sendable(data))
     socket.sendall(format_to_sendable(data))
 
+
+def listen(socket):
+    data = {"listen" : None}
+    # print(format_to_sendable(data))
+    socket.sendall(format_to_sendable(data))
+
+def stop_listen(socket):
+    data = {"stop_listen" : None}
+    socket.sendall(format_to_sendable(data))
+
+def get_full_letterpool(socket):
+    data = {"get_full_letterpool" : None}
+    socket.sendall(format_to_sendable(data))
+
+def get_letterpool_since(socket, period):
+    data = {"get_letterpool_since" : period}
+    socket.sendall(format_to_sendable(data))
+
+def get_full_wordpool(socket):
+    data = {"get_full_wordpool" : None}
+    socket.sendall(format_to_sendable(data))
+
+def get_wordpool_since(socket, period):
+    data = {"get_wordpool_since" : period}
+    socket.sendall(format_to_sendable(data))
+
+def inject_letter(socket, letter):
+    data = {"inject_letter" : letter}
+    socket.sendall(format_to_sendable(data))
+
+def inject_word(socket, word):
+    data = {"inject_word" : word}
+    socket.sendall(format_to_sendable(data))
+
+def inject_raw_op(socket, buf):
+    data = {"inject_raw_op" : buf}
+    socket.sendall(format_to_sendable(data))
 
 
 def format_to_sendable(data):
