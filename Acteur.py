@@ -1,36 +1,18 @@
-import nacl.signing as nas
-import nacl.encoding as nae
-from nacl.exceptions import BadSignatureError
 import socket
 import server_coms
 import time
 import json
+import crypto
 
 class Acteur:
 
     def __init__(self,addr,port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            self.pk, self.sk = self.keyGen()
-            self.pk_str = self.pk.to_curve25519_public_key().__bytes__().hex()
+            self.pk, self.sk = crypto.keyGen()
             self.socket.connect((addr,port))
         except ConnectionRefusedError:
             print("Connection to server failed")
-
-    def keyGen(self, length=1024):
-        sk = nas.SigningKey.generate()
-        pk = sk.verify_key
-        return pk, sk
-
-    def sign(self,data):
-        return self.sk.sign(data.encode()).signature
-
-    def verify(self,pk,data, signature):
-        try:
-            pk.verify(data.encode(), signature)
-            return True
-        except (BadSignatureError):
-            return False
 
     def listen_server(self):
         time.sleep(1)
@@ -59,16 +41,13 @@ class Acteur:
             elif(key == "diff_wordpool"):
                 pass
 
-        
-# actor1 = Acteur()
-# print(actor1.KeyGen())
-
 # msg = "Coucou"
-# a1 = Acteur()
-# pk,sk = a1.KeyGen()
-# s = a1.sign(sk, msg)
-# print(a1.verify(pk, msg, s))
+# a1 = Acteur("localhost",12346)
+# sig = crypto.sign(a1.sk, msg)
+# print(sig)
+# print(crypto.verify(crypto.pkstr_of_pk(a1.pk),msg,sig))
+
 
 a = Acteur("localhost",12346)
-server_coms.register(a.socket, a.pk_str)
+server_coms.register(a.socket, crypto.pkstr_of_pk(a.pk))
 a.listen_server()
