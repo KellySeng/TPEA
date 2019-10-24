@@ -23,23 +23,44 @@ class Acteur:
 
         except BlockingIOError: # Nothing to read
             return
-        print(data)
+        # print(data)
         loaded_data = json.loads(data)
         
-        # TODO Define all methods to handle responses
         for key in loaded_data:
             if(key == "letters_bag"):
-                pass
+                self.handle_letters_bag(loaded_data[key])
             elif(key == "next_turn"):
-                pass
+                self.handle_next_turn(loaded_data[key])
             elif(key == "full_letterpool"):
-                pass
+                self.handle_full_letterpool(loaded_data[key])
             elif(key == "full_wordpool"):
-                pass
+                self.handle_full_wordpool(loaded_data[key])
             elif(key == "diff_letterpool"):
-                pass
+                self.handle_diff_letterpool(loaded_data[key])
             elif(key == "diff_wordpool"):
-                pass
+                self.handle_diff_wordpool(loaded_data[key])
+
+
+    # ==== Override methods in subclasses to handle differently earch responses ====
+    
+    def handle_letters_bag(self, letters):
+        pass
+
+    def handle_next_turn(self, turn):
+        pass
+    
+    def handle_full_letterpool(self, wordpool):
+        pass
+
+    def handle_full_wordpool(self, wordpool):
+        pass
+
+    def handle_diff_letterpool(self, diff):
+        pass
+
+    def handle_diff_wordpool(self, diff):
+        pass
+
 
 # msg = "Coucou"
 # a1 = Acteur("localhost",12346)
