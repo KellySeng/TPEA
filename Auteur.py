@@ -80,10 +80,4 @@ class Auteur(Acteur):
         print(diff)
 
         
-        
-a = Auteur("localhost",12346)
-server_coms.register(a.socket, "b7b597e0d64accdb6d8271328c75ad301c29829619f4865d31cc0c550046a08f")
-a.listen_server()
-
-
 # a.injectLetter("a",0,"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca","b7b597e0d64accdb6d8271328c75ad301c29829619f4865d31cc0c550046a08f")
