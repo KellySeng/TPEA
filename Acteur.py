@@ -1,54 +1,39 @@
 import socket
 import server_coms
-import time
 import json
 import crypto
+from threading import Thread
 
 class Acteur:
 
     def __init__(self,addr,port):
+        self.addr = addr
+        self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.pk, self.sk = crypto.keyGen()
+        self.listener = Listener(self)
+
+    def start(self):
         try:
-            self.pk, self.sk = crypto.keyGen()
-            self.socket.connect((addr,port))
+            self.socket.connect((self.addr,self.port))
         except ConnectionRefusedError:
             print("Connection to server failed")
+        server_coms.register(self.socket, crypto.pkstr_of_pk(self.pk))
+        server_coms.listen(self.socket)
+        self.listener.start()
 
-    def listen_server(self):
-        time.sleep(1)
-        try:
-            msg_length_b = self.socket.recv(8, socket.MSG_DONTWAIT)
-            msg_length = int.from_bytes(msg_length_b, "big")
-            data = self.socket.recv(msg_length, socket.MSG_DONTWAIT).decode("utf-8", "ignore") # TODO Stop ignoring most ASCII characters. But why is it random since dict use only letters ?
-
-        except BlockingIOError: # Nothing to read
-            return
-        # print(data)
-        loaded_data = json.loads(data)
-        
-        for key in loaded_data:
-            if(key == "letters_bag"):
-                self.handle_letters_bag(loaded_data[key])
-            elif(key == "next_turn"):
-                self.handle_next_turn(loaded_data[key])
-            elif(key == "full_letterpool"):
-                self.handle_full_letterpool(loaded_data[key])
-            elif(key == "full_wordpool"):
-                self.handle_full_wordpool(loaded_data[key])
-            elif(key == "diff_letterpool"):
-                self.handle_diff_letterpool(loaded_data[key])
-            elif(key == "diff_wordpool"):
-                self.handle_diff_wordpool(loaded_data[key])
-
+    def stop(self):
+        self.listener.stop_listener()
+        self.listener.join()
 
     # ==== Override methods in subclasses to handle differently earch responses ====
-    
+
     def handle_letters_bag(self, letters):
         pass
 
     def handle_next_turn(self, turn):
         pass
-    
+
     def handle_full_letterpool(self, wordpool):
         pass
 
@@ -62,13 +47,52 @@ class Acteur:
         pass
 
 
-# msg = "Coucou"
-# a1 = Acteur("localhost",12346)
-# sig = crypto.sign(a1.sk, msg)
-# print(sig)
-# print(crypto.verify(crypto.pkstr_of_pk(a1.pk),msg,sig))
+# Class for a thread that will listen to all messages from the central server
+class Listener(Thread):
+
+    def __init__(self,acteur):
+        Thread.__init__(self)
+        self.acteur = acteur
+        self.running = True
+        self.acteur.socket.settimeout(1.0) # Use a timeout to be able to close the socket properly
+
+    def run(self):
+        while self.running:
+            try:
+                # Reading the length of the message
+                msg_length_b = self.acteur.socket.recv(8)
+                msg_length = int.from_bytes(msg_length_b, "big")
+                # Reading the message
+                msg = self.acteur.socket.recv(msg_length).decode("utf-8", "ignore")
+            except socket.timeout:
+                continue
+
+            # Convert json to python dictionary
+            loaded_msg = json.loads(msg)
+            # Match
+            for key in loaded_msg:
+                if(key == "letters_bag"):
+                    self.acteur.handle_letters_bag(loaded_msg[key])
+                elif(key == "next_turn"):
+                    self.acteur.handle_next_turn(loaded_msg[key])
+                elif(key == "full_letterpool"):
+                    self.acteur.handle_full_letterpool(loaded_msg[key])
+                elif(key == "full_wordpool"):
+                    self.acteur.handle_full_wordpool(loaded_msg[key])
+                elif(key == "diff_letterpool"):
+                    self.acteur.handle_diff_letterpool(loaded_msg[key])
+                elif(key == "diff_wordpool"):
+                    self.acteur.handle_diff_wordpool(loaded_msg[key])
+        self.acteur.socket.close() # Closes the socket once the thread has stopped running properly
+        
+
+    def stop_listener(self):
+        self.running = False
 
 
-a = Acteur("localhost",12346)
-server_coms.register(a.socket, crypto.pkstr_of_pk(a.pk))
-a.listen_server()
+# ====
+# Test
+# ====
+
+# a = Acteur("localhost",12346)
+# a.start()

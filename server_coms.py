@@ -2,13 +2,10 @@ import json
 
 def register(socket, public_key):
     data = { "register" : public_key}
-    # print(format_to_sendable(data))
     socket.sendall(format_to_sendable(data))
-
 
 def listen(socket):
     data = {"listen" : None}
-    # print(format_to_sendable(data))
     socket.sendall(format_to_sendable(data))
 
 def stop_listen(socket):
@@ -43,9 +40,8 @@ def inject_raw_op(socket, buf):
     data = {"inject_raw_op" : buf}
     socket.sendall(format_to_sendable(data))
 
-
 def format_to_sendable(data):
     datastring = json.dumps(data)
     size = len(datastring)
-    size_be_bytes = (size).to_bytes(8, byteorder="big") 
+    size_be_bytes = (size).to_bytes(8, byteorder="big")
     return (size_be_bytes.decode() + datastring).encode()
