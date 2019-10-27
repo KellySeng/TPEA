@@ -8,6 +8,7 @@ import nacl.signing as nas
 import nacl.encoding as nae
 from nacl.exceptions import BadSignatureError
 import server_coms
+import time
 
 class Auteur(Acteur):
     def __init__(self, addr, port):
@@ -81,3 +82,8 @@ class Auteur(Acteur):
 
         
 # a.injectLetter("a",0,"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca","b7b597e0d64accdb6d8271328c75ad301c29829619f4865d31cc0c550046a08f")
+
+a = Auteur("localhost", 12346)
+a.start()
+time.sleep(2)
+a.stop()

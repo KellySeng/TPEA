@@ -22,6 +22,10 @@ class Acteur:
         server_coms.listen(self.socket)
         self.listener.start()
 
+    def stop(self):
+        self.listener.stop_listener()
+        self.listener.join()
+
     # ==== Override methods in subclasses to handle differently earch responses ====
 
     def handle_letters_bag(self, letters):
@@ -49,15 +53,20 @@ class Listener(Thread):
     def __init__(self,acteur):
         Thread.__init__(self)
         self.acteur = acteur
+        self.running = True
+        self.acteur.socket.settimeout(1.0) # Use a timeout to be able to close the socket properly
 
     def run(self):
-        while True:
-            # Reading the length of the message
-            msg_length_b = self.acteur.socket.recv(8)
-            msg_length = int.from_bytes(msg_length_b, "big")
-            # Reading the message
-            msg = self.acteur.socket.recv(msg_length).decode("utf-8", "ignore")
-            print(msg)
+        while self.running:
+            try:
+                # Reading the length of the message
+                msg_length_b = self.acteur.socket.recv(8)
+                msg_length = int.from_bytes(msg_length_b, "big")
+                # Reading the message
+                msg = self.acteur.socket.recv(msg_length).decode("utf-8", "ignore")
+            except socket.timeout:
+                continue
+
             # Convert json to python dictionary
             loaded_msg = json.loads(msg)
             # Match
@@ -74,6 +83,11 @@ class Listener(Thread):
                     self.acteur.handle_diff_letterpool(loaded_msg[key])
                 elif(key == "diff_wordpool"):
                     self.acteur.handle_diff_wordpool(loaded_msg[key])
+        self.acteur.socket.close() # Closes the socket once the thread has stopped running properly
+        
+
+    def stop_listener(self):
+        self.running = False
 
 
 # ====
