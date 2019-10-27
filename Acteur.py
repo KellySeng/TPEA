@@ -11,6 +11,7 @@ class Acteur:
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.pk, self.sk = crypto.keyGen()
+        self.pkstr = crypto.pkstr_of_pk(self.pk)
         self.listener = Listener(self)
 
     def start(self):
@@ -25,6 +26,7 @@ class Acteur:
     def stop(self):
         self.listener.stop_listener()
         self.listener.join()
+
 
     # ==== Override methods in subclasses to handle differently earch responses ====
 

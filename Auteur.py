@@ -9,10 +9,12 @@ import nacl.encoding as nae
 from nacl.exceptions import BadSignatureError
 import server_coms
 import time
+import crypto
 
 class Auteur(Acteur):
     def __init__(self, addr, port):
         Acteur.__init__(self, addr, port)
+        self.letters_bag = []
         # self.main_loop # TODO Uncomment once main loop is defined
 
     def main_loop(self):
@@ -35,15 +37,13 @@ class Auteur(Acteur):
                     "author" :  author      #self.pk.encode(encoder=nae.HexEncoder)
                 }
 
-                letter_bin = ''.join(format(ord(i), 'b') for i in letter) 
+                letter_bin = bin(ord(letter)).lstrip("0b").zfill(8)
                 print(letter_bin)
-                period_bin = "{0:b}".format(period)
+                period_bin = "{0:b}".format(period).zfill(64) # TODO Not sure if that is big endian order
                 print(period_bin)
-                binary = lambda x: "".join(reversed( [i+j for i,j in zip( *[ ["{0:04b}".format(int(c,16)) for c in reversed("0"+x)][n::2] for n in [1,0] ] ) ] ))
-                head_bin = binary(hash_pred)
+                head_bin = bin(int(hash_pred, 16)).lstrip("0b").zfill(256)
                 print(head_bin)
-               # author_bin = bin(int(self.pk.encode(encoder=nae.HexEncoder), base=16)).lstrip('0b')
-                author_bin = bin(int(author,base=16)).lstrip('0b')
+                author_bin = bin(int(author, 16)).lstrip('0b').zfill(256)
                 print(author_bin)
 
                 concat = letter_bin + period_bin + head_bin + author_bin
@@ -51,19 +51,19 @@ class Auteur(Acteur):
                 m.update(concat.encode())
                 res_concat = m.hexdigest()
                 print(res_concat)
-                sig = self.sign(res_concat)
+                sig = crypto.sign(self.sk, res_concat.encode())
                 print(sig)
-                print(self.verify(self.pk,res_concat,  self.sign(res_concat)))
+                print(crypto.verify(self.pkstr, res_concat.encode(), crypto.sign(self.sk, res_concat.encode())))
 
                 x["signature"] = sig
-                data = json.dumps(x)
-
-                return data
+                print(x)
+                server_coms.inject_letter(self.socket, x)
 
     # TODO ==== Define how to handle server responses in this class here ====
+    # TODO Pay attention to criticals sections
 
     def handle_letters_bag(self, letters):
-        print(letters)
+        self.letters_bag = letters
 
     def handle_next_turn(self, turn):
         print(turn)
@@ -81,9 +81,7 @@ class Auteur(Acteur):
         print(diff)
 
         
-# a.injectLetter("a",0,"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca","b7b597e0d64accdb6d8271328c75ad301c29829619f4865d31cc0c550046a08f")
-
 a = Auteur("localhost", 12346)
 a.start()
-time.sleep(2)
+a.injectLetter("a",0,"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", a.pkstr)
 a.stop()
