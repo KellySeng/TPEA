@@ -4,15 +4,18 @@ import string
 import json
 import hashlib
 import binascii
+import crypto
 import nacl.signing as nas
 import nacl.encoding as nae
 from nacl.exceptions import BadSignatureError
 import server_coms
 import time
+import struct 
 
 class Auteur(Acteur):
     def __init__(self, addr, port):
         Acteur.__init__(self, addr, port)
+        self.letters_bag = []
         # self.main_loop # TODO Uncomment once main loop is defined
 
     def main_loop(self):
@@ -25,40 +28,54 @@ class Auteur(Acteur):
     def byte_to_binary(self, n):
         return ''.join(str((n & (1 << i)) and 1) for i in reversed(range(8)))
     
+    # TODO ==== remplace hash_period by an instace of a blockchain
     def injectLetter(self,letter,period,hash_pred,author):
 
+        # when the blockchain is empty
+        empty = ""
+        h = hashlib.sha256()
+        h.update(empty.encode())
+        hash_pred = h.hexdigest()
+
+
         if(len(letter) == 1 ):
-                x = {
-                    "letter" : letter,
-                    "period" : period, #taille du message 8 bytes qui encodent la taille en binaire
-                    "head" : hash_pred,
-                    "author" :  author      #self.pk.encode(encoder=nae.HexEncoder)
-                }
+            x = {
+                "letter" : letter,
+                "period" : period, #taille du message 8 bytes qui encodent la taille en binaire
+                "head" : hash_pred,                  
+                "author" :  author      #self.pk.encode(encoder=nae.HexEncoder)
+            }
+            
+            #convert the letter to binary
+            letter_binary = bin(ord(letter)).lstrip("0b").zfill(8)
+        
+            #convert the period to binary
+            period_byte  = period.to_bytes((period.bit_length() + 7) // 8, 'big') or b'\0'    
+            period_binary = bin(int(period_byte.hex(), base=16)).lstrip('0b').zfill(64)
+    
+            #convert the head to binary
+            head_binary = bin(int(hash_pred, 16)).lstrip("0b").zfill(256)
+         
+            #convert the author public key to binary
+            author_binary = bin(int(author, 16)).lstrip('0b').zfill(256)
+         
+            #concat everything and produce a hash
+            concat = letter_binary + period_binary + head_binary + author_binary
+            m = hashlib.sha256()
+            m.update(concat.encode())
+            res_concat = m.hexdigest()
 
-                letter_bin = ''.join(format(ord(i), 'b') for i in letter) 
-                print(letter_bin)
-                period_bin = "{0:b}".format(period)
-                print(period_bin)
-                binary = lambda x: "".join(reversed( [i+j for i,j in zip( *[ ["{0:04b}".format(int(c,16)) for c in reversed("0"+x)][n::2] for n in [1,0] ] ) ] ))
-                head_bin = binary(hash_pred)
-                print(head_bin)
-               # author_bin = bin(int(self.pk.encode(encoder=nae.HexEncoder), base=16)).lstrip('0b')
-                author_bin = bin(int(author,base=16)).lstrip('0b')
-                print(author_bin)
+            #add the signature to data
+            sig = crypto.sign(self.sk, res_concat.encode())
+            x["signature"] = sig
+            
+            #send the message to the server
+            server_coms.inject_letter(self.socket, x)
 
-                concat = letter_bin + period_bin + head_bin + author_bin
-                m = hashlib.sha256()
-                m.update(concat.encode())
-                res_concat = m.hexdigest()
-                print(res_concat)
-                sig = self.sign(res_concat)
-                print(sig)
-                print(self.verify(self.pk,res_concat,  self.sign(res_concat)))
 
-                x["signature"] = sig
-                data = json.dumps(x)
+    def get_letter_pool(self):
+        server_coms.get_full_letterpool(self.socket)
 
-                return data
 
     # TODO ==== Define how to handle server responses in this class here ====
 
@@ -81,9 +98,10 @@ class Auteur(Acteur):
         print(diff)
 
         
-# a.injectLetter("a",0,"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca","b7b597e0d64accdb6d8271328c75ad301c29829619f4865d31cc0c550046a08f")
 
 a = Auteur("localhost", 12346)
 a.start()
+a.injectLetter("a",0,"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca","b7b597e0d64accdb6d8271328c75ad301c29829619f4865d31cc0c550046a08f")
 time.sleep(2)
+a.get_letter_pool()
 a.stop()
