@@ -15,14 +15,22 @@ class Auteur(Acteur):
     def __init__(self, addr, port):
         Acteur.__init__(self, addr, port)
         self.letters_bag = []
-        # self.main_loop # TODO Uncomment once main loop is defined
+        self.current_period = 0
+        self.head_block = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        self.main_loop() # TODO Uncomment once main loop is defined
 
     def main_loop(self):
+        self.start()
+        self.injectLetter(self.generateLetter(), self.current_period, self.head_block, self.pkstr)
+        self.stop()
         #Define main  routine here
         pass
 
     def generateLetter(self):
-        random.choice(string.ascii_letters).lower()
+        if(len(self.letters_bag) > 0):
+            return random.choice(self.letters_bag)
+        else:
+            return None
 
     def byte_to_binary(self, n):
         return ''.join(str((n & (1 << i)) and 1) for i in reversed(range(8)))
@@ -82,6 +90,4 @@ class Auteur(Acteur):
 
         
 a = Auteur("localhost", 12346)
-a.start()
-a.injectLetter("a",0,"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", a.pkstr)
-a.stop()
+
