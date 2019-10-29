@@ -1,5 +1,6 @@
-from Acteur import Acteur
+from acteur import Acteur
 import server_coms
+
 class Politicien(Acteur):
     def __init__(self, addr, port):
         Acteur.__init__(self, addr, port)
@@ -11,7 +12,7 @@ class Politicien(Acteur):
 
 
     # TODO ==== Define how to handle server responses in this class here ====
-    
+
     def handle_letters_bag(self, letters):
         print(letters)
 

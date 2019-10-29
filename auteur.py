@@ -1,4 +1,4 @@
-from Acteur import Acteur
+from acteur import Acteur
 import random
 import server_coms
 import time
