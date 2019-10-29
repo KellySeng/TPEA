@@ -11,6 +11,7 @@ class Acteur:
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.pk, self.sk = crypto.keyGen()
+        self.pkstr = crypto.pkstr_of_pk(self.pk)
         self.listener = Listener(self)
 
     def start(self):
@@ -18,7 +19,7 @@ class Acteur:
             self.socket.connect((self.addr,self.port))
         except ConnectionRefusedError:
             print("Connection to server failed")
-        server_coms.register(self.socket, crypto.pkstr_of_pk(self.pk))
+        server_coms.register(self.socket, self.pkstr)
         server_coms.listen(self.socket)
         self.listener.start()
 
@@ -84,7 +85,6 @@ class Listener(Thread):
                 elif(key == "diff_wordpool"):
                     self.acteur.handle_diff_wordpool(loaded_msg[key])
         self.acteur.socket.close() # Closes the socket once the thread has stopped running properly
-        
 
     def stop_listener(self):
         self.running = False
