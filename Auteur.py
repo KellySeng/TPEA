@@ -1,12 +1,5 @@
 from Acteur import Acteur
 import random
-import string
-import json
-import hashlib
-import binascii
-import nacl.signing as nas
-import nacl.encoding as nae
-from nacl.exceptions import BadSignatureError
 import server_coms
 import time
 import crypto
@@ -22,49 +15,28 @@ class Auteur(Acteur):
     def main_loop(self):
         self.start()
         time.sleep(0.1)
-        self.injectLetter(self.generateLetter(), self.current_period, self.head_block, self.pkstr)
+        self.inject_letter(self.choose_letter(), self.current_period, self.head_block)
+        server_coms.get_full_letterpool(self.socket)
         self.stop()
         #Define main  routine here
 
-    def generateLetter(self):
+    def choose_letter(self):
         if(len(self.letters_bag) > 0):
             return random.choice(self.letters_bag)
         else:
             return None
 
-    def byte_to_binary(self, n):
-        return ''.join(str((n & (1 << i)) and 1) for i in reversed(range(8)))
-    
-    def injectLetter(self, letter, period, hash_pred, author):
+    def inject_letter(self, letter, period, head):
 
         if(len(letter) == 1):
             to_inject = {
                 "letter" : letter,
-                "period" : period, #taille du message 8 bytes qui encodent la taille en binaire
-                "head" : hash_pred,
-                "author" :  author      #self.pk.encode(encoder=nae.HexEncoder)
+                "period" : period,
+                "head" : head,
+                "author" : self.pkstr,
+                "signature" : crypto.sign_letter(self.sk,letter,period,head,self.pkstr)
             }
-
-            hasher = hashlib.sha256()
-
-            letter_bin = ord(letter).to_bytes(1, byteorder="big")
-            hasher.update(letter_bin)
-            
-            period_bin = (period).to_bytes(8, byteorder="big")
-            hasher.update(period_bin)
-            
-            head_bin = int(hash_pred, 16).to_bytes(32, byteorder="big")
-            hasher.update(head_bin)
-            
-            author_bin = int(author, 16).to_bytes(32, byteorder="big")
-            hasher.update(author_bin)
-            
-
-            res_concat = hasher.digest()
-            sig = crypto.sign(self.sk, res_concat)
-            to_inject["signature"] = sig
             print(to_inject)
-
             server_coms.inject_letter(self.socket, to_inject)
 
     # TODO ==== Define how to handle server responses in this class here ====
@@ -88,6 +60,9 @@ class Auteur(Acteur):
     def handle_diff_wordpool(self, diff):
         print(diff)
 
-        
-a = Auteur("localhost", 12346)
 
+# ====
+# TEST
+# ====
+
+# a = Auteur("localhost", 12346)

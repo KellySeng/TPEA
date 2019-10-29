@@ -27,7 +27,6 @@ class Acteur:
         self.listener.stop_listener()
         self.listener.join()
 
-
     # ==== Override methods in subclasses to handle differently earch responses ====
 
     def handle_letters_bag(self, letters):
@@ -86,7 +85,6 @@ class Listener(Thread):
                 elif(key == "diff_wordpool"):
                     self.acteur.handle_diff_wordpool(loaded_msg[key])
         self.acteur.socket.close() # Closes the socket once the thread has stopped running properly
-        
 
     def stop_listener(self):
         self.running = False
