@@ -21,6 +21,7 @@ class Auteur(Acteur):
 
     def main_loop(self):
         self.start()
+        time.sleep(0.1)
         self.injectLetter(self.generateLetter(), self.current_period, self.head_block, self.pkstr)
         self.stop()
         #Define main  routine here
@@ -46,17 +47,21 @@ class Auteur(Acteur):
                 }
 
                 letter_bin = bin(ord(letter)).lstrip("0b").zfill(8)
+                letter_bin = bytes(letter, "utf-8")
                 print(letter_bin)
                 period_bin = "{0:b}".format(period).zfill(64) # TODO Not sure if that is big endian order
+                period_bin = bytes(period)
                 print(period_bin)
                 head_bin = bin(int(hash_pred, 16)).lstrip("0b").zfill(256)
+                head_bin = bytes(hash_pred, "utf-8")
                 print(head_bin)
                 author_bin = bin(int(author, 16)).lstrip('0b').zfill(256)
+                author_bin = bytes(author, "utf-8")
                 print(author_bin)
 
                 concat = letter_bin + period_bin + head_bin + author_bin
                 m = hashlib.sha256()
-                m.update(concat.encode())
+                m.update(concat)
                 res_concat = m.hexdigest()
                 print(res_concat)
                 sig = crypto.sign(self.sk, res_concat.encode())

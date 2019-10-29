@@ -19,7 +19,7 @@ class Acteur:
             self.socket.connect((self.addr,self.port))
         except ConnectionRefusedError:
             print("Connection to server failed")
-        server_coms.register(self.socket, crypto.pkstr_of_pk(self.pk))
+        server_coms.register(self.socket, self.pkstr)
         server_coms.listen(self.socket)
         self.listener.start()
 
