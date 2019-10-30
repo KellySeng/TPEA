@@ -1,8 +1,9 @@
 import socket
-import server_coms
 import json
-import crypto
 from threading import Thread
+
+import server_coms
+import crypto
 
 class Acteur:
 
@@ -13,6 +14,9 @@ class Acteur:
         self.pk, self.sk = crypto.keyGen()
         self.pkstr = crypto.pkstr_of_pk(self.pk)
         self.listener = Listener(self)
+
+        self.current_letterpool = []
+        self.current_wordpool = []
 
     def start(self):
         try:
