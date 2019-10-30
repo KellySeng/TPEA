@@ -44,4 +44,4 @@ def format_to_sendable(data):
     datastring = json.dumps(data)
     size = len(datastring)
     size_be_bytes = (size).to_bytes(8, byteorder="big")
-    return (size_be_bytes.decode() + datastring).encode()
+    return (size_be_bytes.decode('ISO-8859-1') + datastring).encode('ISO-8859-1').strip()

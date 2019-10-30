@@ -1,6 +1,5 @@
 import random
 import time
-import threading
 
 from acteur import Acteur
 import server_coms
@@ -10,15 +9,15 @@ class Auteur(Acteur):
     def __init__(self, addr, port):
         Acteur.__init__(self, addr, port)
         self.letters_bag = []
-        self.current_period = 0
         self.letter_injected_this_turn = False
-        self.head_block = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        self.cond = threading.Condition()
+        
         self.main_loop()
 
 
     def main_loop(self):
         self.start()
+        server_coms.register(self.socket, self.pkstr)
+        server_coms.listen(self.socket)
         time.sleep(0.1) # TODO Find a way to improve this (Wait for the server to respond to register and send the letter bag)
         while True:
             self.cond.acquire()
@@ -36,7 +35,6 @@ class Auteur(Acteur):
                 self.cond.release()
             
         self.stop()
-        #Define main  routine here
 
     def choose_letter(self):
         if(self.letters_bag):
@@ -73,10 +71,14 @@ class Auteur(Acteur):
         self.cond.release()
 
     def handle_full_letterpool(self, letterpool):
+        self.cond.acquire()
         self.current_letterpool = letterpool["letters"]
+        self.cond.release()
 
     def handle_full_wordpool(self, wordpool):
+        self.cond.acquire()
         self.current_wordpool = wordpool["words"]
+        self.cond.release()
 
     def handle_diff_letterpool(self, diff):
         # TODO Define
@@ -86,6 +88,17 @@ class Auteur(Acteur):
         # TODO Define
         print(diff)
 
+    def handle_inject_letter(self, letter):
+        # TODO Define
+        pass
+    
+    def handle_inject_word(self, word):
+        # TODO Define
+        pass
+    
+    def handle_inject_raw_op(self, raw_op):
+        # TODO Define
+        pass
 
 # ====
 # TEST

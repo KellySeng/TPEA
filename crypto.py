@@ -76,8 +76,29 @@ def sign_letter(sk,letter,period,head,author):
     hasher.update(head_bin)
     hasher.update(author_bin)
 
-    res_concat = hasher.digest()
-    return sign(sk, res_concat)
+    res_hash = hasher.digest()
+    return sign(sk, res_hash)
+
+def sign_word(sk, word, head, politician):
+    """
+    SigningKey -> str -> str -> str
+    Sign a word and return the signature
+    """
+
+    hasher = hashlib.sha256()
+    for letter in word:
+        hasher.update(ord(letter["letter"]).to_bytes(1, byteorder="big"))
+        hasher.update((letter["period"]).to_bytes(8, byteorder="big"))
+        hasher.update(int(letter["head"], 16).to_bytes(32, byteorder="big"))
+        hasher.update(int(letter["author"], 16).to_bytes(32, byteorder="big"))
+        hasher.update(int(letter["signature"], 16).to_bytes(64, byteorder="big"))
+
+    hasher.update(int(head, 16).to_bytes(32, byteorder="big"))
+    hasher.update(int(politician, 16).to_bytes(32, byteorder="big"))
+
+    res_hash = hasher.digest()
+    return sign(sk, res_hash)
+
 
 # ====
 # Test
