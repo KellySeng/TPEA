@@ -1,9 +1,8 @@
 import socket
 import json
 import threading
-
-import server_coms
 import crypto
+import server_coms
 
 class Acteur:
 
@@ -15,9 +14,9 @@ class Acteur:
         self.pkstr = crypto.pkstr_of_pk(self.pk)
         self.listener = Listener(self)
         self.cond = threading.Condition()
-        
-        self.head_block = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        self.current_period = 0
+
+        self.head_block = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" # TODO maybe useless ?
+        self.current_period = -1
         self.current_letterpool = []
         self.current_wordpool = []
 
@@ -26,7 +25,20 @@ class Acteur:
             self.socket.connect((self.addr,self.port))
         except ConnectionRefusedError:
             print("Connection to server failed")
+            exit(0)
         self.listener.start()
+        server_coms.listen(self.socket)
+        # Need to set the current period
+        server_coms.get_full_letterpool(self.socket)
+        self.cond.acquire()
+        while(self.current_period == -1):
+            try:
+                self.cond.wait()
+            except KeyboardInterrupt:
+                self.cond.release()
+                self.stop()
+                exit(0)
+        self.cond.release()
 
     def stop(self):
         self.listener.stop_listener()
@@ -41,10 +53,19 @@ class Acteur:
         pass
 
     def handle_full_letterpool(self, letterpool):
-        pass
+        self.cond.acquire()
+        if self.current_period == -1:
+            # Only way to get the current period at the start of an Acteur
+            self.current_period = letterpool["current_period"]
+            self.cond.notify_all()
+        else:
+            self.current_letterpool = letterpool["letters"]
+        self.cond.release()
 
     def handle_full_wordpool(self, wordpool):
-        pass
+        self.cond.acquire()
+        self.current_wordpool = wordpool["words"]
+        self.cond.release()
 
     def handle_diff_letterpool(self, diff):
         pass
@@ -54,10 +75,10 @@ class Acteur:
 
     def handle_inject_letter(self, letter):
         pass
-    
+
     def handle_inject_word(self, word):
         pass
-    
+
     def handle_inject_raw_op(self, raw_op):
         pass
 
@@ -102,7 +123,7 @@ class Listener(threading.Thread):
                 elif(key == "inject_word"):
                     self.acteur.handle_inject_word(loaded_msg[key])
                 elif(key == "inject_raw_op"):
-                    self.acteur.handle_inject_raw_op(loaded_msg[key])                    
+                    self.acteur.handle_inject_raw_op(loaded_msg[key])
         self.acteur.socket.close() # Closes the socket once the thread has stopped running properly
 
     def stop_listener(self):
