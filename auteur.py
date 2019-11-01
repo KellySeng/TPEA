@@ -27,13 +27,12 @@ class Auteur(Acteur):
 
     def main_loop(self):
         self.start()
-        while True:
+        while self.letters_bag:
             self.cond.acquire()
             if(not self.letter_injected_this_turn):
                 self.letter_injected_this_turn = True
                 choosen_letter = self.choose_letter()
                 self.inject_letter(choosen_letter, self.current_period, self.head_block)
-                # server_coms.get_full_letterpool(self.socket)  # TODO why ?
             try:
                 self.cond.wait()
             except KeyboardInterrupt:

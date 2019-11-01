@@ -1,13 +1,13 @@
 import random
 from acteur import Acteur
-from dictionary import Dictionnary
+from dictionary import Dictionary
 import server_coms
 import crypto
 
 class Politicien(Acteur):
     def __init__(self, addr, port, namefile):
         Acteur.__init__(self, addr, port)
-        self.dict = Dictionnary()
+        self.dict = Dictionary()
         self.dict.load_file(namefile)
         self.main_loop()
 

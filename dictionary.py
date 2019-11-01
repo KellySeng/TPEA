@@ -1,7 +1,35 @@
-class Dictionnary:
+class Dictionary:
 
     def __init__(self):
         self.dico = self.empty_dictionary()
+        self.score = {
+            "a" : 1,
+            "b" : 3,
+            "c" : 3,
+            "d" : 2,
+            "e" : 1,
+            "f" : 4,
+            "g" : 2,
+            "h" : 4,
+            "i" : 1,
+            "j" : 8,
+            "k" : 10,
+            "l" : 1,
+            "m" : 2,
+            "n" : 1,
+            "o" : 1,
+            "p" : 3,
+            "q" : 8,
+            "r" : 1,
+            "s" : 1,
+            "t" : 1,
+            "u" : 1,
+            "v" : 4,
+            "w" : 10,
+            "x" : 10,
+            "y" : 10,
+            "z" : 10
+        }
 
     def empty_dictionary(self):
         return {"is_word" : False, "next":{}}
@@ -47,3 +75,14 @@ class Dictionnary:
         for tmp in f:
             line = tmp[:-1]
             self.add_word(line)
+
+    def score_word(self,word):
+        if not(self.is_word(word)):
+            return 0
+        score = 0
+        for x in word:
+            score += self.score[x]
+        return score
+
+    def score_letter(self,letter):
+        return self.score[letter]
