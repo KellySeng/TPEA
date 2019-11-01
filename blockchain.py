@@ -22,57 +22,69 @@ def get_word_from_block(block):
         word += letter["letter"]
     return word
 
-def wordpool_to_trwordpool(wordpool):
+def is_block_valid(dico,block):
+    """
+    Return True if the block is valid:
+    - the word exist in the dictionary
+    - the head of each letter have the same head as the block
+    - the letters have different authors
+    """
+    try:
+        if not dico.is_word(get_word_from_block(block)):
+            return False
+        authors = set()
+        for letter in block["word"]:
+            if letter["head"] != block["head"]:
+                return False
+            if letter["author"] in authors:
+                return False
+            authors.add(letter["author"])
+        return True
+    except Exception:
+        return False
+
+def wordpool_to_trwordpool(dico,wordpool):
     """
     This function transforms the wordpool in a python dictionary easier to manipulate.
-    The keys are the hash of a block and the values are the block and a list of hashes of blocks
-    that are built on top of this block.
-    There is also a field "heads" who stores a set containing all last hash of block (only 1
-    if there are no forks in the blockchain)
+    The keys are the hash of a block and the values are the block.
+    There is also a field "heads" who stores a set containing all hashes of blocks at the end
+    of a chain (only 1 if there are no forks in the blockchain)
 
     We will call this dictionary trwordpool.
     """
-    res = {
+    trwordpool = {
         "heads" : {"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
-        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" : {"block" : None,
-                                                                              "succ" : []}
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" : None
     }
     for block in wordpool["words"]:
-        hash_b = hash_block(block)
-        res[hash_b] = {
-            "block" : block,
-            "succ" : []
-        }
-        pred = res[block["head"]]
-        pred["succ"].append(hash_b)
-        res["heads"].add(hash_b)
-        if block["head"] in res["heads"]:
-            res["heads"].remove(block["head"])
-    return res
+        if is_block_valid(dico,block):
+            hash_b = hash_block(block)
+            trwordpool[hash_b] = block
+            trwordpool["heads"].add(hash_b)
+            if block["head"] in trwordpool["heads"]:
+                trwordpool["heads"].remove(block["head"])
+    return trwordpool
 
-def add_block(trwordpool,block):
+def add_block(dico,trwordpool,block):
     """
     Add a new block to the trwordpool
     """
-    hash_b = hash_block(block)
-    trwordpool[hash_b] = {
-        "block" : block,
-        "succ" : []}
-    pred = trwordpool[block["head"]]
-    pred["succ"].append(hash_b)
-    trwordpool["heads"].add(hash_b)
-    if block["head"] in trwordpool["heads"]:
-        trwordpool["heads"].remove(block["head"])
+    if is_block_valid(dico,block):
+        hash_b = hash_block(block)
+        trwordpool[hash_b] = block
+        trwordpool["heads"].add(hash_b)
+        if block["head"] in trwordpool["heads"]:
+            trwordpool["heads"].remove(block["head"])
 
 def score_blockchain(dico,trwordpool,hash_b):
     """
     Return the score a the blockchain until hash_b
     """
-    block = trwordpool[hash_b]["block"]
+    block = trwordpool[hash_b]
     score = 0
     while block:
         score += dico.score_word(get_word_from_block(block))
-        block = trwordpool[block["head"]]["block"]
+        block = trwordpool[block["head"]]
     return score
 
 def get_best_head(dico,trwordpool):
@@ -93,11 +105,11 @@ def get_best_blockchain(dico,trwordpool):
     Return the best blockchain from the head to the genesis
     """
     best_head = get_best_head(dico,trwordpool)
-    block = trwordpool[best_head]["block"]
+    block = trwordpool[best_head]
     res = []
     while block:
         res.append(block)
-        block = trwordpool[block["head"]]["block"]
+        block = trwordpool[block["head"]]
     return res
 
 def total_scores(dico,trwordpool):
@@ -182,12 +194,12 @@ def total_scores(dico,trwordpool):
 #           "politician":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab77",
 #           "signature":"c7a41b5bfcec80d3780bfc5d3ff8c934f7c7f41b27956a8acb20aee066b406edc5d1cb26c42a1e491da85a97650b0d5854680582dcad3b2c99e2e04879769307" }
 
-# trwordpool = wordpool_to_trwordpool(wordpool)
 # dico = Dictionary()
 # dico.load_file("dict/dict_100000_1_10.txt")
+# trwordpool = wordpool_to_trwordpool(dico,wordpool)
 
 # print(trwordpool)
-# add_block(trwordpool,block)
+# add_block(dico,trwordpool,block)
 # print(trwordpool)
 # print(get_best_head(dico,trwordpool))
 # print(get_best_blockchain(dico,trwordpool))
