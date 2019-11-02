@@ -56,13 +56,8 @@ def wordpool_to_trwordpool(dico,wordpool):
         "heads" : {"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" : None
     }
-    for block in wordpool["words"]:
-        if is_block_valid(dico,block):
-            hash_b = hash_block(block)
-            trwordpool[hash_b] = block
-            trwordpool["heads"].add(hash_b)
-            if block["head"] in trwordpool["heads"]:
-                trwordpool["heads"].remove(block["head"])
+    for block in wordpool["words"][::-1]: # reverse list:
+        add_block(dico,trwordpool,block[1])
     return trwordpool
 
 def add_block(dico,trwordpool,block):
@@ -153,31 +148,31 @@ def total_scores(dico,trwordpool):
 #     "current_period": 0,
 #     "next_period": 1,
 #     "words": [
-#         { "word":[ { "letter":"a", "period":0,
-#                      "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-#                      "author":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab71",
-#                      "signature":"2909ad8ca59787d6421e71e4e9dc807cbbe120892fe9f0d7627d6a6be8746a099fad797884344faff10a892bd1c10bd351f911be05269a3a24f9c5bbace78409" },
-#                    { "letter":"b", "period":0,
-#                      "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-#                      "author":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab72",
-#                      "signature":"08efc0569047f34e6cda7410ae2c9aa4d8097438948bc8c3c671cd6b8d309433324ba2e32ecb0fdd2b7aa807a19d6c62957e0d6e9f60897286ff0d9f99bd3106" }
+#         [0,{ "word":[ { "letter":"a", "period":0,
+#                         "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+#                         "author":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab71",
+#                         "signature":"2909ad8ca59787d6421e71e4e9dc807cbbe120892fe9f0d7627d6a6be8746a099fad797884344faff10a892bd1c10bd351f911be05269a3a24f9c5bbace78409" },
+#                       { "letter":"b", "period":0,
+#                         "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+#                         "author":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab72",
+#                         "signature":"08efc0569047f34e6cda7410ae2c9aa4d8097438948bc8c3c671cd6b8d309433324ba2e32ecb0fdd2b7aa807a19d6c62957e0d6e9f60897286ff0d9f99bd3106" }
 #         ],
-#           "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-#           "politician":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab78",
-#           "signature":"c7a41b5bfcec80d3780bfc5d3ff8c934f7c7f41b27956a8acb20aee066b406edc5d1cb26c42a1e491da85a97650b0d5854680582dcad3b2c99e2e04879769307" },
+#              "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+#              "politician":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab78",
+#              "signature":"c7a41b5bfcec80d3780bfc5d3ff8c934f7c7f41b27956a8acb20aee066b406edc5d1cb26c42a1e491da85a97650b0d5854680582dcad3b2c99e2e04879769307" }],
 
-#         { "word":[ { "letter":"w", "period":0,
-#                      "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-#                      "author":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab71",
-#                      "signature":"2909ad8ca59787d6421e71e4e9dc807cbbe120892fe9f0d7627d6a6be8746a099fad797884344faff10a892bd1c10bd351f911be05269a3a24f9c5bbace78409" },
-#                    { "letter":"z", "period":0,
-#                      "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-#                      "author":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab73",
-#                      "signature":"08efc0569047f34e6cda7410ae2c9aa4d8097438948bc8c3c671cd6b8d309433324ba2e32ecb0fdd2b7aa807a19d6c62957e0d6e9f60897286ff0d9f99bd3106" }
+#         [0,{ "word":[ { "letter":"w", "period":0,
+#                         "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+#                         "author":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab71",
+#                         "signature":"2909ad8ca59787d6421e71e4e9dc807cbbe120892fe9f0d7627d6a6be8746a099fad797884344faff10a892bd1c10bd351f911be05269a3a24f9c5bbace78409" },
+#                       { "letter":"z", "period":0,
+#                         "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+#                         "author":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab73",
+#                         "signature":"08efc0569047f34e6cda7410ae2c9aa4d8097438948bc8c3c671cd6b8d309433324ba2e32ecb0fdd2b7aa807a19d6c62957e0d6e9f60897286ff0d9f99bd3106" }
 #         ],
-#           "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-#           "politician":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab78",
-#           "signature":"c7a41b5bfcec80d3780bfc5d3ff8c934f7c7f41b27956a8acb20aee066b406edc5d1cb26c42a1e491da85a97650b0d5854680582dcad3b2c99e2e04879769307" }
+#              "head":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+#              "politician":"0b418daae4ca18c026d7f1d55237130cbdb9e874d98f7480f85f912c6470ab78",
+#              "signature":"c7a41b5bfcec80d3780bfc5d3ff8c934f7c7f41b27956a8acb20aee066b406edc5d1cb26c42a1e491da85a97650b0d5854680582dcad3b2c99e2e04879769307" }]
 #     ]
 # }
 

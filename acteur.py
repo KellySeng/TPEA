@@ -3,10 +3,12 @@ import json
 import threading
 import crypto
 import server_coms
+import blockchain
+from dictionary import Dictionary
 
 class Acteur:
 
-    def __init__(self,addr,port):
+    def __init__(self,addr,port,namefile):
         self.addr = addr
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,10 +17,12 @@ class Acteur:
         self.listener = Listener(self)
         self.cond = threading.Condition()
 
-        self.head_block = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" # TODO maybe useless ?
         self.current_period = -1
-        self.current_letterpool = []
-        self.current_wordpool = []
+        self.trwordpool = {}
+        self.wordpool = [] # store injected words when trwordpool not initialized yet
+
+        self.dico = Dictionary()
+        self.namefile = namefile
 
     def start(self):
         try:
@@ -26,12 +30,14 @@ class Acteur:
         except ConnectionRefusedError:
             print("Connection to server failed")
             exit(0)
+        self.dico.load_file(self.namefile)
         self.listener.start()
         server_coms.listen(self.socket)
-        # Need to set the current period
-        server_coms.get_full_letterpool(self.socket)
+
+        # Get period and wordpool
+        server_coms.get_full_wordpool(self.socket)
         self.cond.acquire()
-        while(self.current_period == -1):
+        while not self.trwordpool:
             try:
                 self.cond.wait()
             except KeyboardInterrupt:
@@ -53,18 +59,21 @@ class Acteur:
         pass
 
     def handle_full_letterpool(self, letterpool):
-        self.cond.acquire()
-        if self.current_period == -1:
-            # Only way to get the current period at the start of an Acteur
-            self.current_period = letterpool["current_period"]
-            self.cond.notify_all()
-        else:
-            self.current_letterpool = letterpool["letters"]
-        self.cond.release()
+        pass
 
     def handle_full_wordpool(self, wordpool):
+        """
+        Only used at the beginning of an Acteur in order to get the period and
+        create the trwordpool
+        """
         self.cond.acquire()
-        self.current_wordpool = wordpool["words"]
+        if self.current_period < wordpool["current_period"]:
+            self.current_period = wordpool["current_period"]
+        self.trwordpool = blockchain.wordpool_to_trwordpool(self.dico,wordpool)
+        for block in self.wordpool:
+            blockchain.add_block(self.dico,self.trwordpool,block)
+        self.wordpool = []
+        self.cond.notify_all()
         self.cond.release()
 
     def handle_diff_letterpool(self, diff):
@@ -77,7 +86,12 @@ class Acteur:
         pass
 
     def handle_inject_word(self, word):
-        pass
+        self.cond.acquire()
+        if self.trwordpool:
+            blockchain.add_block(self.dico,self.trwordpool,word)
+        else:
+            self.wordpool.append(word)
+        self.cond.release()
 
     def handle_inject_raw_op(self, raw_op):
         pass
@@ -134,5 +148,5 @@ class Listener(threading.Thread):
 # Test
 # ====
 
-# a = Acteur("localhost",12346)
+# a = Acteur("localhost",12346, "dict/dict_100000_1_10.txt")
 # a.start()

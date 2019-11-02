@@ -2,18 +2,19 @@ import random
 from acteur import Acteur
 import server_coms
 import crypto
+import blockchain
 
 class Auteur(Acteur):
 
-    def __init__(self, addr, port):
-        Acteur.__init__(self, addr, port)
+    def __init__(self, addr, port, namefile):
+        Acteur.__init__(self, addr, port, namefile)
         self.letters_bag = []
         self.letter_injected_this_turn = False
         self.main_loop()
 
     def start(self):
         Acteur.start(self)
-        # Need to register and set the current period
+        # Register
         server_coms.register(self.socket, self.pkstr)
         self.cond.acquire()
         while(self.letters_bag == []):
@@ -30,16 +31,16 @@ class Auteur(Acteur):
         while self.letters_bag:
             self.cond.acquire()
             if(not self.letter_injected_this_turn):
-                self.letter_injected_this_turn = True
+                head = blockchain.get_best_head(self.dico,self.trwordpool)
                 choosen_letter = self.choose_letter()
-                self.inject_letter(choosen_letter, self.current_period, self.head_block)
+                self.inject_letter(choosen_letter, self.current_period, head)
+                self.letter_injected_this_turn = True
             try:
                 self.cond.wait()
             except KeyboardInterrupt:
                 break
             finally:
                 self.cond.release()
-
         self.stop()
 
     def choose_letter(self):
@@ -59,7 +60,6 @@ class Auteur(Acteur):
                 "author" : self.pkstr,
                 "signature" : crypto.sign_letter(self.sk,letter,period,head,self.pkstr)
             }
-            # print(to_inject)
             server_coms.inject_letter(self.socket, to_inject)
 
     # TODO ==== Define how to handle server responses in this class here ====
@@ -73,7 +73,8 @@ class Auteur(Acteur):
 
     def handle_next_turn(self, turn):
         self.cond.acquire()
-        self.current_period = turn
+        if self.current_period < turn:
+            self.current_period = turn
         self.letter_injected_this_turn = False
         self.cond.notify_all()
         self.cond.release()
@@ -103,4 +104,4 @@ class Auteur(Acteur):
 # TEST
 # ====
 
-a = Auteur("localhost", 12346)
+a = Auteur("localhost", 12346, "dict/dict_100000_1_10.txt")

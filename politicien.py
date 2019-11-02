@@ -1,46 +1,52 @@
 import random
 from acteur import Acteur
-from dictionary import Dictionary
 import server_coms
 import crypto
+import blockchain
+import letterpool
 
 class Politicien(Acteur):
     def __init__(self, addr, port, namefile):
-        Acteur.__init__(self, addr, port)
-        self.dict = Dictionary()
-        self.dict.load_file(namefile)
+        Acteur.__init__(self, addr, port, namefile)
+        self.trletterpool = {}
+        self.letterpool = [] # store injected letters when trletterpool not initialized yet
         self.main_loop()
 
-    def main_loop(self):
-        self.start()
-
+    def start(self):
+        Acteur.start(self)
+        server_coms.get_full_letterpool(self.socket)
         self.cond.acquire()
-        while not self.current_letterpool: # TODO no authors when launched => blocked 4ever
+        while not self.trletterpool:
             try:
                 self.cond.wait()
             except KeyboardInterrupt:
+                self.cond.release()
+                self.stop()
                 exit(0)
         self.cond.release()
 
-        word = self.choose_word()
-        print(word)
-        self.inject_word(word, self.head_block)
-
+    def main_loop(self):
+        self.start()
+        while True:
+            self.cond.acquire()
+            head = blockchain.get_best_head(self.dico,self.trwordpool)
+            self.cond.release()
+            word = self.choose_word(head)
+            self.inject_word(word, head)
         self.stop()
 
-    def choose_word(self):
+    def choose_word(self,head):
         # TODO VERY random and won't stop until it finds a match, even if it's impossible (but will take into account letters that are added while searching for a word)
 
         # TODO Stop once this period is over even if nothing was found, to focus on the next one
 
         current_word_str = ""
         current_word = []
-        authors_in_current_word = []
+        authors_in_current_word = set()
 
-        while not self.dict.is_word(current_word_str):
-            # print(current_word_str)
-            if(self.dict.exists_word_with_prefix(current_word_str)):
-                next_letter = self.choose_letter(authors_in_current_word)
+        while not self.dico.is_word(current_word_str):
+            if(self.dico.exists_word_with_prefix(current_word_str)):
+                next_letter = self.choose_letter(head,authors_in_current_word)
                 if next_letter is None:
                     # Cannot create a word big enough to fit with this prefix
                     current_word_str = ""
@@ -49,19 +55,19 @@ class Politicien(Acteur):
                     continue
                 current_word_str += next_letter["letter"]
                 current_word.append(next_letter)
-                authors_in_current_word.append(next_letter["author"])
+                authors_in_current_word.add(next_letter["author"])
             else:
                 current_word_str = ""
                 current_word = []
                 authors_in_current_word.clear()
         return current_word
 
-    def choose_letter(self, exclude_authors=[]):
+    def choose_letter(self,head,exclude_authors={}):
         letters = []
         self.cond.acquire()
-        for l in self.current_letterpool:
-            if not l[1]["author"] in exclude_authors:
-                letters.append(l[1])
+        for l in self.trletterpool[head]["letters"]:
+            if not l["author"] in exclude_authors:
+                letters.append(l)
         self.cond.release()
 
         if letters:
@@ -80,6 +86,15 @@ class Politicien(Acteur):
 
     # TODO ==== Define how to handle server responses in this class here ====
 
+    def handle_full_letterpool(self, pool):
+        self.cond.acquire()
+        self.trletterpool = letterpool.letterpool_to_trletterpool(pool)
+        for letter in self.letterpool:
+            letterpool.add_letter(self.trletterpool,letter)
+        self.letterpool = []
+        self.cond.notify_all()
+        self.cond.release()
+
     def handle_next_turn(self, turn):
         self.cond.acquire()
         self.current_period = turn
@@ -95,21 +110,16 @@ class Politicien(Acteur):
         print(diff)
 
     def handle_inject_letter(self, letter):
-        # print(letter)
-
         self.cond.acquire()
-        if(letter["period"] == self.current_period):
-            self.current_letterpool.append([letter["period"], letter])
-            self.cond.notify_all()
+        if self.trletterpool:
+            letterpool.add_letter(self.trletterpool,letter)
+        else:
+            self.letterpool.append(letter)
         self.cond.release()
-
-    def handle_inject_word(self, word):
-        # TODO Define
-        pass
 
     def handle_inject_raw_op(self, raw_op):
         # TODO Define
         pass
 
 
-p = Politicien("localhost", 12346, "dict/dict_100000_5_15.txt")
+p = Politicien("localhost", 12346, "dict/dict_100000_1_10.txt")
