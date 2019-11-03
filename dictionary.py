@@ -58,17 +58,6 @@ class Dictionary:
                 return False
         return tmp["is_word"]
 
-    def exists_word_with_prefix(self, prefix):
-        tmp = self.dico
-        letters = self.dico["next"]
-        for x in prefix:
-            if x in letters:
-                tmp = letters[x]
-                letters = tmp["next"]
-            else:
-                return False
-        return True
-
     def load_file(self,namefile):
         self.dico = self.empty_dictionary()
         f = open(namefile,"r")

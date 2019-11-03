@@ -72,39 +72,44 @@ class Politicien(Acteur):
         current_word_str = ""
         current_word = []
         authors_in_current_word = set()
+        dico_tmp = self.dico.dico
 
         ite = 0
-        max_ite = 100 # need to adjust maybe
+        max_ite = 10000 # need to adjust maybe
 
         while (not self.dico.is_word(current_word_str)) and ite < max_ite:
             ite += 1
-            if(self.dico.exists_word_with_prefix(current_word_str)):
-                next_letter = self.choose_letter(head,authors_in_current_word)
+            possible_next = dico_tmp["next"].keys()
+            if possible_next:
+                next_letter = self.choose_letter(head,possible_next,authors_in_current_word)
                 if next_letter is None:
-                    # Cannot create a word big enough to fit with this prefix
                     current_word_str = ""
                     current_word = []
                     authors_in_current_word.clear()
-                    continue
-                current_word_str += next_letter["letter"]
-                current_word.append(next_letter)
-                authors_in_current_word.add(next_letter["author"])
+                    dico_tmp = self.dico.dico
+                else:
+                    current_word_str += next_letter["letter"]
+                    current_word.append(next_letter)
+                    authors_in_current_word.add(next_letter["author"])
+                    dico_tmp = dico_tmp["next"][next_letter["letter"]]
+
             else:
                 current_word_str = ""
                 current_word = []
                 authors_in_current_word.clear()
+                dico_tmp = self.dico.dico
 
         if ite == max_ite:
             return False,[]
         return True, current_word
 
-    def choose_letter(self,head,exclude_authors={}):
+    def choose_letter(self,head,possible,exclude_authors={}):
         choices = []
         self.cond.acquire()
 
-        for letters in self.trletterpool[head]["letters"]:
-            if not letters["author"] in exclude_authors:
-                choices.append(letters)
+        for letter in self.trletterpool[head]["letters"]:
+            if (letter["letter"] in possible) and (not letter["author"] in exclude_authors):
+                choices.append(letter)
 
         self.cond.release()
         if choices:
