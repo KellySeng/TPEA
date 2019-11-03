@@ -33,6 +33,7 @@ opam install scrabblos
 ```
 
 # How to use
+
 Launch server
 ```
 scrabblos-server -port 12345 -no-turn
@@ -44,5 +45,6 @@ Launch authors and politicians
 (./launch.sh <addr> <port> <dictionary> <number authors> <number politicians>)
 ./launch.sh localhost 12345 dict/dict_100000_5_15.txt 10 3
 ```
+It's not memory friendly, be careful to not launch too many authors and politicians (15 authors and 5 politicians crashed my PC).
 
 Authors and Politicians make their jobs and print the scores at the end
