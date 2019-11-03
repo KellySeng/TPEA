@@ -85,6 +85,13 @@ class Acteur:
         for h,s in scores_authors.items():
             to_print += h + " : " + str(s) + "\n"
 
+        to_print += "\nYOUR SCORE\n"
+        if self.pkstr in scores_politicians:
+            to_print += self.pkstr + " : " + str(scores_politicians[self.pkstr]) + "\n"
+        elif self.pkstr in scores_authors:
+            to_print += self.pkstr + " : " + str(scores_authors[self.pkstr]) + "\n"
+        else:
+            to_print += self.pkstr + " : " + str(0) + "\n"
         to_print += "=====================================================================\n"
         print(to_print)
 
@@ -160,11 +167,3 @@ class Listener(threading.Thread):
 
     def stop_listener(self):
         self.running = False
-
-
-# ====
-# Test
-# ====
-
-# a = Acteur("localhost",12346, "dict/dict_100000_1_10.txt")
-# a.start()

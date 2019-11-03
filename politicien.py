@@ -126,8 +126,6 @@ class Politicien(Acteur):
         server_coms.inject_word(self.socket, to_inject)
         blockchain.add_block(self.dico,self.trwordpool,to_inject)
 
-    # TODO ==== Define how to handle server responses in this class here ====
-
     def handle_full_letterpool(self, pool):
         self.cond.acquire()
         self.trletterpool = letterpool.letterpool_to_trletterpool(pool)
@@ -159,10 +157,3 @@ class Politicien(Acteur):
         else:
             self.letterpool.append(letter)
         self.cond.release()
-
-    def handle_inject_raw_op(self, raw_op):
-        # TODO Define
-        pass
-
-
-# p = Politicien("localhost", 12346, "dict/dict_100000_1_10.txt")

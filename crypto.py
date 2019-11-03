@@ -47,7 +47,7 @@ def sign(sk,data):
     """
     return hexstr_of_bytes(sk.sign(data).signature)
 
-def verify(pkstr,data,sig): # TODO choose if data is bytes or str
+def verify(pkstr,data,sig):
     """
     str -> bytes -> str -> bool
     Verify the date with a signature and a public key

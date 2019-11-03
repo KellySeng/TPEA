@@ -1,3 +1,10 @@
+# On utilise un arbre lexicographique pour stocker les mots d'un fichier
+# La structure est de la forme suivante
+# arbre : {"is_word : <bool>, "next" : <map<str,arbre>>}
+# Le champ "is_word" indique si le parcours de la racine jusqu'a ce noeud est un mot
+# Ensuite le champ "next" est une map avec pour clefs les lettres suivantes possible
+# et les valeurs des sous arbres lexicographique pour continuer a former des mots
+
 class Dictionary:
 
     def __init__(self):
@@ -32,9 +39,15 @@ class Dictionary:
         }
 
     def empty_dictionary(self):
+        """
+        Return an empty dictionary
+        """
         return {"is_word" : False, "next":{}}
 
     def add_word(self,word):
+        """
+        Add a new word in the dictionary
+        """
         tmp = self.dico
         letters = self.dico["next"]
         for x in word:
@@ -48,6 +61,9 @@ class Dictionary:
         tmp["is_word"] = True
 
     def is_word(self,word):
+        """
+        Check if a word is in the dictionary
+        """
         tmp = self.dico
         letters = self.dico["next"]
         for x in word:
@@ -59,6 +75,9 @@ class Dictionary:
         return tmp["is_word"]
 
     def load_file(self,namefile):
+        """
+        Create a dictionary from a file containing a word per line
+        """
         self.dico = self.empty_dictionary()
         f = open(namefile,"r")
         for tmp in f:
@@ -66,6 +85,9 @@ class Dictionary:
             self.add_word(line)
 
     def score_word(self,word):
+        """
+        Give the score of a word
+        """
         if not(self.is_word(word)):
             return 0
         score = 0
@@ -74,4 +96,7 @@ class Dictionary:
         return score
 
     def score_letter(self,letter):
+        """
+        Give the score of a letter
+        """
         return self.score[letter]

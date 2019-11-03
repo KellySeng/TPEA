@@ -93,8 +93,6 @@ class Auteur(Acteur):
             }
             server_coms.inject_letter(self.socket, to_inject)
 
-    # TODO ==== Define how to handle server responses in this class here ====
-
     def handle_letters_bag(self, letters):
         self.cond.acquire()
         self.letters_bag = letters
@@ -115,13 +113,3 @@ class Auteur(Acteur):
         else:
             self.wordpool.append(word)
         self.cond.release()
-
-    def handle_inject_raw_op(self, raw_op):
-        pass
-
-
-# ====
-# TEST
-# ====
-
-# a = Auteur("localhost", 12346, "dict/dict_100000_1_10.txt")
