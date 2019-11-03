@@ -27,24 +27,57 @@ class Politicien(Acteur):
 
     def main_loop(self):
         self.start()
-        while True:
+        ite = 0
+        while ite < self.max_ite:
             self.cond.acquire()
-            head = blockchain.get_best_head(self.dico,self.trwordpool)
+
+            best_head = blockchain.get_best_head(self.dico,self.trwordpool)
+            if best_head != self.head:
+                # There are words still injected, we can continue trying building blocks
+                ite = 0
+                self.head = best_head
+            else:
+                # No new best block for a while, maybe we can't create anymore
+                ite += 1
+
+            # We release the lock in order to take into account new letters during the search
             self.cond.release()
-            word = self.choose_word(head)
-            self.inject_word(word, head)
+            found,word = self.choose_word(best_head)
+            self.cond.acquire()
+
+            if found:
+                self.inject_word(word,best_head)
+
+            # A break in order to prepare for next iteration (new letters for exemple)
+            try:
+                self.cond.wait(self.timeout)
+            except KeyboardInterrupt:
+                break
+            finally:
+                self.cond.release()
+
+        self.end()
         self.stop()
 
     def choose_word(self,head):
-        # TODO VERY random and won't stop until it finds a match, even if it's impossible (but will take into account letters that are added while searching for a word)
-
-        # TODO Stop once this period is over even if nothing was found, to focus on the next one
+        """
+        VERY random and won't stop until it finds a match or when the number
+        of iterations is too high
+        """
+        if not (head in self.trletterpool):
+            return False, []
+        if not self.trletterpool[head]["letters"]:
+            return False, []
 
         current_word_str = ""
         current_word = []
         authors_in_current_word = set()
 
-        while not self.dico.is_word(current_word_str):
+        ite = 0
+        max_ite = 100 # need to adjust maybe
+
+        while (not self.dico.is_word(current_word_str)) and ite < max_ite:
+            ite += 1
             if(self.dico.exists_word_with_prefix(current_word_str)):
                 next_letter = self.choose_letter(head,authors_in_current_word)
                 if next_letter is None:
@@ -60,18 +93,22 @@ class Politicien(Acteur):
                 current_word_str = ""
                 current_word = []
                 authors_in_current_word.clear()
-        return current_word
+
+        if ite == max_ite:
+            return False,[]
+        return True, current_word
 
     def choose_letter(self,head,exclude_authors={}):
-        letters = []
+        choices = []
         self.cond.acquire()
-        for l in self.trletterpool[head]["letters"]:
-            if not l["author"] in exclude_authors:
-                letters.append(l)
-        self.cond.release()
 
-        if letters:
-            return random.choice(letters)
+        for letters in self.trletterpool[head]["letters"]:
+            if not letters["author"] in exclude_authors:
+                choices.append(letters)
+
+        self.cond.release()
+        if choices:
+            return random.choice(choices)
         return None
 
     def inject_word(self, word, head):
@@ -81,8 +118,8 @@ class Politicien(Acteur):
             "politician" : self.pkstr,
             "signature" : crypto.sign_word(self.sk, word, head, self.pkstr)
         }
-        print(to_inject)
         server_coms.inject_word(self.socket, to_inject)
+        blockchain.add_block(self.dico,self.trwordpool,to_inject)
 
     # TODO ==== Define how to handle server responses in this class here ====
 
@@ -95,19 +132,20 @@ class Politicien(Acteur):
         self.cond.notify_all()
         self.cond.release()
 
+    # Maybe useless since we don't use turns
     def handle_next_turn(self, turn):
         self.cond.acquire()
         self.current_period = turn
-        self.cond.notify_all()
         self.cond.release()
 
-    def handle_diff_letterpool(self, diff):
-        # TODO Define
-        print(diff)
-
-    def handle_diff_wordpool(self, diff):
-        # TODO Define
-        print(diff)
+    def handle_inject_word(self, word):
+        self.cond.acquire()
+        if self.trwordpool:
+            blockchain.add_block(self.dico,self.trwordpool,word)
+            self.cond.notify_all()
+        else:
+            self.wordpool.append(word)
+        self.cond.release()
 
     def handle_inject_letter(self, letter):
         self.cond.acquire()
@@ -122,4 +160,4 @@ class Politicien(Acteur):
         pass
 
 
-p = Politicien("localhost", 12346, "dict/dict_100000_1_10.txt")
+# p = Politicien("localhost", 12346, "dict/dict_100000_1_10.txt")

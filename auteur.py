@@ -9,7 +9,6 @@ class Auteur(Acteur):
     def __init__(self, addr, port, namefile):
         Acteur.__init__(self, addr, port, namefile)
         self.letters_bag = []
-        self.letter_injected_this_turn = False
         self.main_loop()
 
     def start(self):
@@ -28,28 +27,60 @@ class Auteur(Acteur):
 
     def main_loop(self):
         self.start()
-        while self.letters_bag:
+        ite = 0
+        while self.letters_bag and ite < self.max_ite:
             self.cond.acquire()
-            if(not self.letter_injected_this_turn):
-                head = blockchain.get_best_head(self.dico,self.trwordpool)
+
+            # Test if we get a better head than last iteration
+            best_head = blockchain.get_best_head(self.dico, self.trwordpool)
+            if best_head == self.head:
+                try:
+                    self.cond.wait(self.timeout)
+                    ite += 1
+                    continue
+                except KeyboardInterrupt:
+                    break
+                finally:
+                    self.cond.release()
+
+            # We found a new head block
+            else:
+                ite = 0
+                self.head = best_head
                 choosen_letter = self.choose_letter()
-                self.inject_letter(choosen_letter, self.current_period, head)
-                self.letter_injected_this_turn = True
+                self.inject_letter(choosen_letter, self.current_period, best_head)
+                try:
+                    self.cond.wait(self.timeout)
+                except KeyboardInterrupt:
+                    break
+                finally:
+                    self.cond.release()
+
+        # The loop may have been stopped because there are no more letters
+        # in the letters bag. We want to stop only if there is no more activities in
+        # the blockchain
+        while ite < self.max_ite:
+            self.cond.acquire()
+            best_head = blockchain.get_best_head(self.dico, self.trwordpool)
+            if best_head == self.head:
+                ite += 1
+            else:
+                ite = 0
+                self.head = best_head
             try:
-                self.cond.wait()
+                self.cond.wait(self.timeout)
             except KeyboardInterrupt:
                 break
             finally:
                 self.cond.release()
+
+        self.end()
         self.stop()
 
     def choose_letter(self):
-        if(self.letters_bag):
-            res = random.choice(self.letters_bag)
-            self.letters_bag.remove(res)
-            return res
-        else:
-            return None
+        res = random.choice(self.letters_bag)
+        self.letters_bag.remove(res)
+        return res
 
     def inject_letter(self, letter, period, head):
         if(len(letter) == 1):
@@ -63,7 +94,6 @@ class Auteur(Acteur):
             server_coms.inject_letter(self.socket, to_inject)
 
     # TODO ==== Define how to handle server responses in this class here ====
-    # TODO Pay attention to criticals sections
 
     def handle_letters_bag(self, letters):
         self.cond.acquire()
@@ -71,32 +101,22 @@ class Auteur(Acteur):
         self.cond.notify_all()
         self.cond.release()
 
+    # Maybe useless since we don't use turns
     def handle_next_turn(self, turn):
         self.cond.acquire()
-        if self.current_period < turn:
-            self.current_period = turn
-        self.letter_injected_this_turn = False
-        self.cond.notify_all()
+        self.current_period = turn
         self.cond.release()
 
-    def handle_diff_letterpool(self, diff):
-        # TODO Define
-        print(diff)
-
-    def handle_diff_wordpool(self, diff):
-        # TODO Define
-        print(diff)
-
-    def handle_inject_letter(self, letter):
-        # TODO Define
-        pass
-
     def handle_inject_word(self, word):
-        # TODO Define
-        pass
+        self.cond.acquire()
+        if self.trwordpool:
+            blockchain.add_block(self.dico,self.trwordpool,word)
+            self.cond.notify_all()
+        else:
+            self.wordpool.append(word)
+        self.cond.release()
 
     def handle_inject_raw_op(self, raw_op):
-        # TODO Define
         pass
 
 
@@ -104,4 +124,4 @@ class Auteur(Acteur):
 # TEST
 # ====
 
-a = Auteur("localhost", 12346, "dict/dict_100000_1_10.txt")
+# a = Auteur("localhost", 12346, "dict/dict_100000_1_10.txt")

@@ -20,9 +20,16 @@ class Acteur:
         self.current_period = -1
         self.trwordpool = {}
         self.wordpool = [] # store injected words when trwordpool not initialized yet
+        self.head = ""
 
         self.dico = Dictionary()
         self.namefile = namefile
+
+        # Max number of time we try get a better head block before giving up
+        # One reason may be that we can't create another block
+        self.max_ite = 50
+        # timeout when waiting for a new word injected
+        self.timeout = 0.1
 
     def start(self):
         try:
@@ -52,15 +59,6 @@ class Acteur:
 
     # ==== Override methods in subclasses to handle differently earch responses ====
 
-    def handle_letters_bag(self, letters):
-        pass
-
-    def handle_next_turn(self, turn):
-        pass
-
-    def handle_full_letterpool(self, letterpool):
-        pass
-
     def handle_full_wordpool(self, wordpool):
         """
         Only used at the beginning of an Acteur in order to get the period and
@@ -76,6 +74,32 @@ class Acteur:
         self.cond.notify_all()
         self.cond.release()
 
+    def end(self):
+        scores_politicians, scores_authors = blockchain.total_scores(self.dico,self.trwordpool)
+        to_print = "=====================================================================\n"
+        to_print += "SCORES POLITICIANS\n\n"
+        for h,s in scores_politicians.items():
+            to_print += h + " : " + str(s) + "\n"
+
+        to_print += "\nSCORES AUTHORS\n\n"
+        for h,s in scores_authors.items():
+            to_print += h + " : " + str(s) + "\n"
+
+        to_print += "=====================================================================\n"
+        print(to_print)
+
+    def handle_inject_word(self, word):
+        pass
+
+    def handle_letters_bag(self, letters):
+        pass
+
+    def handle_next_turn(self, turn):
+        pass
+
+    def handle_full_letterpool(self, letterpool):
+        pass
+
     def handle_diff_letterpool(self, diff):
         pass
 
@@ -84,14 +108,6 @@ class Acteur:
 
     def handle_inject_letter(self, letter):
         pass
-
-    def handle_inject_word(self, word):
-        self.cond.acquire()
-        if self.trwordpool:
-            blockchain.add_block(self.dico,self.trwordpool,word)
-        else:
-            self.wordpool.append(word)
-        self.cond.release()
 
     def handle_inject_raw_op(self, raw_op):
         pass
@@ -113,6 +129,8 @@ class Listener(threading.Thread):
                 msg_length = int.from_bytes(msg_length_b, "big")
                 # Reading the message
                 msg = self.acteur.socket.recv(msg_length).decode("utf-8", "ignore")
+                if not msg:
+                    continue
             except socket.timeout:
                 continue
 

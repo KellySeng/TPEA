@@ -66,10 +66,11 @@ def add_block(dico,trwordpool,block):
     """
     if is_block_valid(dico,block):
         hash_b = hash_block(block)
-        trwordpool[hash_b] = block
-        trwordpool["heads"].add(hash_b)
-        if block["head"] in trwordpool["heads"]:
-            trwordpool["heads"].remove(block["head"])
+        if not (hash_b in trwordpool):
+            trwordpool[hash_b] = block
+            trwordpool["heads"].add(hash_b)
+            if block["head"] in trwordpool["heads"]:
+                trwordpool["heads"].remove(block["head"])
 
 def score_blockchain(dico,trwordpool,hash_b):
     """
@@ -93,6 +94,10 @@ def get_best_head(dico,trwordpool):
         if tmp_score > best_score:
             best_score = tmp_score
             best_hash = hash_b
+        elif tmp_score == best_score:
+            if int(hash_b,16) > int(best_hash,16):
+                best_score = tmp_score
+                best_hash = hash_b
     return best_hash
 
 def get_best_blockchain(dico,trwordpool):
